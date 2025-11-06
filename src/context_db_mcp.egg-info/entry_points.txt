@@ -1,0 +1,2 @@
+[console_scripts]
+context-db-mcp = context_db_mcp.server:main

@@ -1,0 +1,29 @@
+ [build-system]
+ requires = ["setuptools>=68", "wheel"]
+ build-backend = "setuptools.build_meta"
+
+ [project]
+ name = "context-db-mcp"
+ version = "0.1.0"
+ description = "MCP server that stores and retrieves project context from an OpenAI vector store."
+ readme = "README.md"
+ requires-python = ">=3.11"
+ dependencies = [
+   "mcp>=0.3.0",
+   "openai>=1.44.0",
+   "pydantic>=2.7.0",
+   "tenacity>=8.2.3"
+ ]
+
+ [project.optional-dependencies]
+ dev = [
+   "pytest>=8.3.0",
+   "pytest-asyncio>=0.23.6"
+ ]
+
+ [project.scripts]
+ context-db-mcp = "context_db_mcp.server:main"
+
+
+
+
