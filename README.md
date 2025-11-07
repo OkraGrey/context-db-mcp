@@ -1,6 +1,6 @@
 # Context DB MCP (BETA Mode- can make mistakes)
 
-A Model Context Protocol (MCP) server that stores and retrieves project context using OpenAI vector stores. Enable your AI editor to remember and recall project knowledge across sessions.
+A Model Context Protocol (MCP) server that stores and retrieves project context using OpenAI vector stores. Enable your AI editor to remember and recall project knowledge across sessions. For best results, add this in your agent rules file and force it to use it at the start and the very end of each chat session. Otherwise, in your prompt, ask the agent to use the ingestion or retrieval where necessary.
 
 ## Features
 
@@ -94,3 +94,4 @@ Run the test suite:
 pip install -e ".[dev]"
 pytest tests/ -v
 ```
+
