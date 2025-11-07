@@ -1,28 +1,11 @@
 # Context DB MCP
 
-Context DB MCP is a Model Context Protocol server that lets editor-integrated models
-such as Cursor or Claude Code store and retrieve project context using an OpenAI
-vector store. It ships two tools:
+A Model Context Protocol (MCP) server that stores and retrieves project context using OpenAI vector stores. Enable your AI editor to remember and recall project knowledge across sessions.
 
-- `ingest_document` – Uploads a plain-text summary, design doc, or task log into an
-  OpenAI vector store. The tool automatically stamps useful attributes (e.g.
-  `document_id`, `summary`, and `ingested_at`) so the stored chunks remain
-  discoverable later.
-- `retrieve_relevant_chunks` – Runs a RAG-style similarity search against the same
-  vector store and returns the top matching chunks along with similarity scores and
-  metadata, ready to be spliced into the model context window.
+## Features
 
-The goal is to replace repeated `grep` or manual hunting through a codebase with a
-lightweight workflow: continuously ingest the most important artifacts and retrieve
-them instantly when a related feature needs updates.
-
-## 📖 Documentation
-
-- **[QUICKSTART.md](QUICKSTART.md)** - Get started in 5 minutes
-- **[CLAUDE_CODE_SETUP.md](CLAUDE_CODE_SETUP.md)** - Setup guide for Claude Code (Anthropic's IDE)
-- **[USAGE_GUIDE.md](USAGE_GUIDE.md)** - Detailed tool documentation, examples, and best practices
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
-- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - Testing procedures
+- **`ingest_document`** - Store project summaries, design docs, and context in a vector store
+- **`retrieve_relevant_chunks`** - Retrieve relevant context using semantic search
 
 ## Installation
 
@@ -30,154 +13,84 @@ them instantly when a related feature needs updates.
 pip install -e .
 ```
 
-### Requirements
-
-- Python 3.11+
-- An OpenAI API key with access to the Assistants v2 / Vector Store APIs
+**Requirements:** Python 3.11+ and an OpenAI API key
 
 ## Configuration
 
-Set the following environment variables (add them to a `.env` file if you prefer):
-
-| Variable | Required | Description |
-| --- | --- | --- |
-| `OPENAI_API_KEY` or `CONTEXT_DB_OPENAI_API_KEY` | ✅ | API key used for all OpenAI requests |
-| `CONTEXT_DB_OPENAI_ORGANIZATION` | Optional | OpenAI organization identifier |
-| `CONTEXT_DB_OPENAI_PROJECT` | Optional | OpenAI project identifier |
-| `CONTEXT_DB_VECTOR_STORE_ID` | Optional | Default vector store ID used when tool calls omit an explicit store |
-| `CONTEXT_DB_VECTOR_STORE_NAME` | Optional | If no store ID is provided, the server will look up (or create) a store with this name |
-| `CONTEXT_DB_DEFAULT_MAX_RESULTS` | Optional | Fallback `max_results` for retrieval queries (default: 10) |
-| `CONTEXT_DB_LOG_LEVEL` | Optional | Log level (`INFO`, `DEBUG`, etc.) |
-
-> **Tip:** Providing `CONTEXT_DB_VECTOR_STORE_NAME` makes it easy to share a single
-> store across multiple sessions without tracking IDs manually. The server scans for
-> a store with the provided name before creating a new one.
-
-## Running the server
+Create a `.env` file (or set environment variables):
 
 ```bash
-context-db-mcp
+# Required
+OPENAI_API_KEY=sk-your-api-key-here
+
+# Optional - Vector Store (use ID for existing, NAME to create/find)
+CONTEXT_DB_VECTOR_STORE_ID=vs_xxxxx
+# OR
+CONTEXT_DB_VECTOR_STORE_NAME=context-db-mcp
+
+# Optional - Tuning
+CONTEXT_DB_DEFAULT_MAX_RESULTS=10
+CONTEXT_DB_REQUEST_TIMEOUT_SECONDS=120.0
+CONTEXT_DB_LOG_LEVEL=INFO
 ```
 
-By default the server listens on stdio, which is compatible with Cursor, Claude
-Code, and other MCP-aware editors. To run in development mode with hot reloads,
-leverage your favourite process manager—`uvx`, `honcho`, or similar.
+Use `env.example` as a template.
 
-## Editor integration
-
-### Cursor
-
-Add the following block to your `~/.cursor/mcp.json` (create the file if it does not
-exist):
-
-```json
-{
-  "servers": {
-    "context-db": {
-      "command": "context-db-mcp",
-      "env": {
-        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
-        "CONTEXT_DB_VECTOR_STORE_NAME": "cursor-shared-context"
-      }
-    }
-  }
-}
-```
-
-Restart Cursor and look for the tools under the MCP integration panel. You can now
-call `ingest_document` periodically (for example, after drafting a design summary)
-and pull context with `retrieve_relevant_chunks` before starting a related task.
+## Usage
 
 ### Claude Code
 
-**📖 For detailed setup instructions, see [CLAUDE_CODE_SETUP.md](CLAUDE_CODE_SETUP.md)**
-
-Add the following to `~/.anthropic/config.json`:
+Add to your project root inside .mcp.json (create with exact name and preceeding dot) and paste the following:
 
 ```json
 {
   "mcpServers": {
     "context-db": {
-      "command": "context-db-mcp",
+      "command": "{PATH TO THE BIN FOLDER IN YOUR CLONED REPO for example: {YOUR PATH.....}/Context_DB_MCP/env/bin/context-db-mcp}",
       "env": {
-        "OPENAI_API_KEY": "sk-your-actual-api-key-here",
-        "CONTEXT_DB_VECTOR_STORE_NAME": "claude-shared-context"
+        "OPENAI_API_KEY": "sk-your-api-key-here",
+        "CONTEXT_DB_VECTOR_STORE_NAME": "context-db-mcp"
       }
     }
   }
 }
 ```
 
-Restart Claude Code and the tools will be available as `mcp_context-db_ingest_document` 
-and `mcp_context-db_retrieve_relevant_chunks`.
+Restart Claude Code. Tools will be available as:
+- `mcp__context-db__ingest_document`
+- `mcp__context-db__retrieve_relevant_chunks`
 
-### Other MCP Clients
+### Cursor
 
-Any MCP-compliant client can connect over stdio. Point the client to the
-`context-db-mcp` binary and ensure the environment variables listed above are
-available.
+Add to `~/.cursor/mcp.json`:
 
-## Usage patterns
-
-- **Continuous context capture** – Generate short, structured summaries after each
-  session (e.g. feature description, touched files, noteworthy interfaces) and call
-  `ingest_document` to store them.
-- **Targeted retrieval** – When returning to a feature or debugging a regression,
-  call `retrieve_relevant_chunks` with a concise natural-language description. The
-  tool returns the highest scoring chunks along with metadata to help you open the
-  exact files.
-
-The MCP server intentionally avoids a heavy schema to stay flexible. You can supply
-custom attributes (tags, sprint IDs, etc.) for filtered retrieval when needed.
-
-## Development
-
-### Running tests
-
-Install dev dependencies and run tests:
-
-```bash
-pip install -e ".[dev]"
-pytest tests/ -v
+```json
+{
+  "mcpServers": {
+    "context-db": {
+      "command": "{PATH TO THE BIN FOLDER IN YOUR CLONED REPO for example: {YOUR PATH.....}/Context_DB_MCP/env/bin/context-db-mcp}",
+      "env": {
+        "OPENAI_API_KEY": "sk-your-api-key-here",
+        "CONTEXT_DB_VECTOR_STORE_NAME": "context-db-mcp"
+      }
+    }
+  }
+}
 ```
 
-All 15 tests should pass. The test suite covers:
-- Configuration management
-- Request validation
-- Document ingestion
-- Chunk retrieval
-- Score filtering
-- MCP server initialization
+Restart Cursor and access the tools from the MCP integration panel.
 
-### Testing the MCP connection
+## Testing
 
-Before using the server in Cursor, run the diagnostic script to verify everything works:
+Run the diagnostic script to verify your setup:
 
 ```bash
 python test_mcp_connection.py
 ```
 
-This will check:
-1. ✅ Environment configuration (API key, vector store settings)
-2. ✅ OpenAI API connectivity
-3. ✅ Vector store access/creation
-4. ✅ Document ingestion
-5. ✅ Document retrieval
+Run the test suite:
 
-If any checks fail, see `TROUBLESHOOTING.md` for solutions to common issues.
-
-### Linting
-
-Linting is handled by your editor or CI; the project keeps dependencies minimal on purpose.
-
-## Roadmap ideas
-
-- Optional automatic summarisation before ingestion (using GPT-4o-mini or similar)
-- Bulk ingestion of entire folders with globbing support
-- First-party CLI for seeding a new vector store from an existing knowledge base
-
-Contributions and feedback are welcome!
-
-
-
-
+```bash
+pip install -e ".[dev]"
+pytest tests/ -v
+```
