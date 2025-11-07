@@ -1,4 +1,4 @@
-# Context DB MCP
+# Context DB MCP (BETA Mode- can make mistakes)
 
 A Model Context Protocol (MCP) server that stores and retrieves project context using OpenAI vector stores. Enable your AI editor to remember and recall project knowledge across sessions.
 
