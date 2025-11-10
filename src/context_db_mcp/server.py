@@ -11,6 +11,7 @@ from mcp.server.fastmcp.server import Context
 from . import __version__
 from .config import Settings, get_settings
 from .vector_store import (
+    GetVectorStoreInfoResponse,
     IngestDocumentRequest,
     IngestDocumentResponse,
     OpenAIContextStore,
@@ -128,6 +129,38 @@ def build_server(settings: Optional[Settings] = None) -> FastMCP:
         ctx.info(
             f"Found {len(result.results)} relevant chunks from vector store {result.vector_store_id}"
         )
+        return result
+
+    @server.tool(
+        name="get_vector_store_info",
+        title="Get Vector Store Info",
+        description=(
+            "Get information about the configured OpenAI vector store.\n\n"
+            "Optional Parameters:\n"
+            "- vector_store_id (string): Vector store ID to query. If omitted, uses default from config.\n\n"
+            "Response Format:\n"
+            "Returns information about the vector store:\n"
+            "- vector_store_id: The ID of the vector store\n"
+            "- vector_store_name: The name of the vector store (if available)\n\n"
+            "Example:\n"
+            "{\n"
+            "  \"vector_store_id\": \"vs_abc123\"\n"
+            "}"
+        ),
+        structured_output=True,
+    )
+    def get_vector_store_info(
+        vector_store_id: Optional[str] = None, ctx: Context = None
+    ) -> GetVectorStoreInfoResponse:
+        """Tool for getting vector store information."""
+
+        if ctx:
+            ctx.info("Retrieving vector store information...")
+        result = store.get_vector_store_info(vector_store_id)
+        if ctx:
+            ctx.info(
+                f"Vector store ID: {result.vector_store_id}, Name: {result.vector_store_name or 'N/A'}"
+            )
         return result
 
     return server

@@ -138,6 +138,15 @@ class RetrieveRelevantChunksResponse(BaseModel):
     results: List[RetrievedChunk]
 
 
+class GetVectorStoreInfoResponse(BaseModel):
+    """Response containing vector store information."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    vector_store_id: str
+    vector_store_name: Optional[str]
+
+
 class OpenAIContextStore:
     """Helper class that wraps the OpenAI SDK for vector store operations."""
 
@@ -304,6 +313,21 @@ class OpenAIContextStore:
             results=collected,
         )
 
+    def get_vector_store_info(
+        self, vector_store_id: Optional[str] = None
+    ) -> GetVectorStoreInfoResponse:
+        """Get information about the configured vector store."""
+
+        vector_store = self.ensure_vector_store(
+            vector_store_id=vector_store_id,
+            vector_store_name=None,
+        )
+
+        return GetVectorStoreInfoResponse(
+            vector_store_id=vector_store.id,
+            vector_store_name=getattr(vector_store, "name", None),
+        )
+
     def _find_vector_store_by_name(self, name: str) -> Optional[VectorStore]:
         """Return an existing vector store that matches the provided name."""
 
@@ -336,6 +360,7 @@ __all__ = [
     "RetrieveRelevantChunksRequest",
     "RetrieveRelevantChunksResponse",
     "RetrievedChunk",
+    "GetVectorStoreInfoResponse",
     "OpenAIContextStore",
 ]
 
